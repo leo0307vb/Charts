@@ -160,6 +160,7 @@
 		06B3C0F81D99F85400B1DF43 /* LineChartTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06B3C0F41D99F85400B1DF43 /* LineChartTests.swift */; };
 		06B3C0F91D99F85400B1DF43 /* ChartsRealmTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06B3C0F61D99F85400B1DF43 /* ChartsRealmTest.swift */; };
 		5B56A9CD1D905EB300F58178 /* Description.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B56A9CC1D905EB300F58178 /* Description.swift */; };
+		A74904831DDBD68E00B6688F /* PolarAreaChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74904821DDBD68E00B6688F /* PolarAreaChartView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -337,6 +338,7 @@
 		06B3C0F41D99F85400B1DF43 /* LineChartTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineChartTests.swift; sourceTree = "<group>"; };
 		06B3C0F61D99F85400B1DF43 /* ChartsRealmTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChartsRealmTest.swift; sourceTree = "<group>"; };
 		5B56A9CC1D905EB300F58178 /* Description.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Description.swift; sourceTree = "<group>"; };
+		A74904821DDBD68E00B6688F /* PolarAreaChartView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PolarAreaChartView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -457,6 +459,7 @@
 				06B11FBA1D811B8900D14B02 /* HorizontalBarChartView.swift */,
 				06B11FBB1D811B8900D14B02 /* LineChartView.swift */,
 				06B11FBC1D811B8900D14B02 /* PieChartView.swift */,
+				A74904821DDBD68E00B6688F /* PolarAreaChartView.swift */,
 				06B11FBD1D811B8900D14B02 /* PieRadarChartViewBase.swift */,
 				06B11FBE1D811B8900D14B02 /* RadarChartView.swift */,
 				06B11FBF1D811B8900D14B02 /* ScatterChartView.swift */,
@@ -1007,6 +1010,7 @@
 				06B120681D811B8900D14B02 /* ChartDataEntry.swift in Sources */,
 				06B120A71D811B8900D14B02 /* ChartDataRendererBase.swift in Sources */,
 				06B1209B1D811B8900D14B02 /* ScatterChartDataProvider.swift in Sources */,
+				A74904831DDBD68E00B6688F /* PolarAreaChartView.swift in Sources */,
 				06B1204D1D811B8900D14B02 /* PieChartView.swift in Sources */,
 				06B120521D811B8900D14B02 /* ChartLimitLine.swift in Sources */,
 				06B120B31D811B8900D14B02 /* CircleShapeRenderer.swift in Sources */,
