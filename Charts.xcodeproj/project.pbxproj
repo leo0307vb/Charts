@@ -161,6 +161,7 @@
 		06B3C0F91D99F85400B1DF43 /* ChartsRealmTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06B3C0F61D99F85400B1DF43 /* ChartsRealmTest.swift */; };
 		5B56A9CD1D905EB300F58178 /* Description.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B56A9CC1D905EB300F58178 /* Description.swift */; };
 		A74904831DDBD68E00B6688F /* PolarAreaChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74904821DDBD68E00B6688F /* PolarAreaChartView.swift */; };
+		A7931B961DDCB67500FE3380 /* PolarAreaChartRender.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7931B951DDCB67500FE3380 /* PolarAreaChartRender.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -339,6 +340,7 @@
 		06B3C0F61D99F85400B1DF43 /* ChartsRealmTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChartsRealmTest.swift; sourceTree = "<group>"; };
 		5B56A9CC1D905EB300F58178 /* Description.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Description.swift; sourceTree = "<group>"; };
 		A74904821DDBD68E00B6688F /* PolarAreaChartView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PolarAreaChartView.swift; sourceTree = "<group>"; };
+		A7931B951DDCB67500FE3380 /* PolarAreaChartRender.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PolarAreaChartRender.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -656,6 +658,7 @@
 				06B120381D811B8900D14B02 /* YAxisRenderer.swift */,
 				06B120391D811B8900D14B02 /* YAxisRendererHorizontalBarChart.swift */,
 				06B1203A1D811B8900D14B02 /* YAxisRendererRadarChart.swift */,
+				A7931B951DDCB67500FE3380 /* PolarAreaChartRender.swift */,
 			);
 			name = Renderers;
 			path = Source/Charts/Renderers;
@@ -1006,6 +1009,7 @@
 				06B120481D811B8900D14B02 /* CandleStickChartView.swift in Sources */,
 				06B120B81D811B8900D14B02 /* XShapeRenderer.swift in Sources */,
 				06B120B21D811B8900D14B02 /* ChevronUpShapeRenderer.swift in Sources */,
+				A7931B961DDCB67500FE3380 /* PolarAreaChartRender.swift in Sources */,
 				06B120591D811B8900D14B02 /* XAxis.swift in Sources */,
 				06B120681D811B8900D14B02 /* ChartDataEntry.swift in Sources */,
 				06B120A71D811B8900D14B02 /* ChartDataRendererBase.swift in Sources */,
