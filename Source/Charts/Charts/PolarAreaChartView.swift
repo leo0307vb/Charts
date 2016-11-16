@@ -22,25 +22,19 @@ open class PolarAreaChartView: PieRadarChartViewBase
     /// flag indicating if entry labels should be drawn or not
     fileprivate var _drawEntryLabelsEnabled = true
     
-    /// array that holds the width of each polar-slice in degrees
-    fileprivate var _drawAngles = [CGFloat]()
-    
-    /// array that holds the absolute angle in degrees of each slice
-    fileprivate var _absoluteAngles = [CGFloat]()
-    
-    /// if true, the hole inside the chart will be drawn
-    fileprivate var _drawHoleEnabled = true
-    
-    fileprivate var _holeColor: NSUIColor? = NSUIColor.white
-    
     /// Sets the color the entry labels are drawn with.
     fileprivate var _entryLabelColor: NSUIColor? = NSUIColor.white
     
     /// Sets the font the entry labels are drawn with.
     fileprivate var _entryLabelFont: NSUIFont? = NSUIFont(name: "HelveticaNeue", size: 13.0)
     
-    /// if true, the hole will see-through to the inner tips of the slices
-    fileprivate var _drawSlicesUnderHoleEnabled = false
+    /// array that holds the width of each polar-slice in degrees
+    fileprivate var _drawRadius = [CGFloat]()
+    
+    /// array that holds the absolute angle in degrees of each slice
+    fileprivate var _absoluteAngles = [CGFloat]()
+    
+    fileprivate var _absoluteAngle:CGFloat = 360
     
     /// if true, the values inside the polarchart are drawn as percent values
     fileprivate var _usePercentValuesEnabled = false
@@ -50,11 +44,6 @@ open class PolarAreaChartView: PieRadarChartViewBase
     
     /// the offset on the x- and y-axis the center text has in dp.
     fileprivate var _centerTextOffset: CGPoint = CGPoint()
-    
-    /// indicates the size of the hole in the center of the polarchart
-    ///
-    /// **default**: `0.5`
-    fileprivate var _holeRadiusPercent = CGFloat(0.5)
     
     fileprivate var _transparentCircleColor: NSUIColor? = NSUIColor(white: 1.0, alpha: 105.0/255.0)
     
@@ -85,8 +74,6 @@ open class PolarAreaChartView: PieRadarChartViewBase
         
         renderer = PolarAreaChartRenderer(chart: self, animator: _animator, viewPortHandler: _viewPortHandler)
         _xAxis = nil
-        
-//        self.highlighter = polarHighlighter(chart: self)
     }
     
     open override func draw(_ rect: CGRect)
@@ -144,7 +131,7 @@ open class PolarAreaChartView: PieRadarChartViewBase
     
     internal override func calcMinMax()
     {
-        calcAngles()
+        calcRadiusAndAngle()
     }
     
     open override func getMarkerPosition(highlight: Highlight) -> CGPoint
@@ -154,11 +141,6 @@ open class PolarAreaChartView: PieRadarChartViewBase
         
         var off = r / 10.0 * 3.6
         
-        if self.isDrawHoleEnabled
-        {
-            off = (r - (r * self.holeRadiusPercent)) / 2.0
-        }
-        
         r -= off // offset to keep things inside the chart
         
         let rotationAngle = self.rotationAngle
@@ -166,27 +148,28 @@ open class PolarAreaChartView: PieRadarChartViewBase
         let entryIndex = Int(highlight.x)
         
         // offset needed to center the drawn text in the slice
-        let offset = drawAngles[entryIndex] / 2.0
+        let offset = absoluteAngle / 2.0
         
         // calculate the text position
-        let x: CGFloat = (r * cos(((rotationAngle + absoluteAngles[entryIndex] - offset) * CGFloat(_animator.phaseY)) * ChartUtils.Math.FDEG2RAD) + center.x)
-        let y: CGFloat = (r * sin(((rotationAngle + absoluteAngles[entryIndex] - offset) * CGFloat(_animator.phaseY)) * ChartUtils.Math.FDEG2RAD) + center.y)
+        let x: CGFloat = (r * cos(((rotationAngle + _absoluteAngle - offset) * CGFloat(_animator.phaseY)) * ChartUtils.Math.FDEG2RAD) + center.x)
+        let y: CGFloat = (r * sin(((rotationAngle + _absoluteAngle - offset) * CGFloat(_animator.phaseY)) * ChartUtils.Math.FDEG2RAD) + center.y)
         
         return CGPoint(x: x, y: y)
     }
     
     /// calculates the needed angles for the chart slices
-    fileprivate func calcAngles()
+    fileprivate func calcRadiusAndAngle()
     {
-        _drawAngles = [CGFloat]()
         _absoluteAngles = [CGFloat]()
+        _drawRadius = [CGFloat]()
         
         guard let data = _data else { return }
         
         let entryCount = data.entryCount
         
-        _drawAngles.reserveCapacity(entryCount)
         _absoluteAngles.reserveCapacity(entryCount)
+        
+        _absoluteAngle = maxAngle / CGFloat(entryCount)
         
         let yValueSum = (_data as! PieChartData).yValueSum
         
@@ -198,23 +181,26 @@ open class PolarAreaChartView: PieRadarChartViewBase
         {
             let set = dataSets[i]
             let entryCount = set.entryCount
-            
+            var yValues = [Double]()
             for j in 0 ..< entryCount
             {
                 guard let e = set.entryForIndex(j) else { continue }
-                
-                _drawAngles.append(calcAngle(value: abs(e.y), yValueSum: yValueSum))
-                
+                yValues.append(e.y)
                 if cnt == 0
                 {
-                    _absoluteAngles.append(_drawAngles[cnt])
+                    _absoluteAngles.append(_absoluteAngle)
                 }
                 else
                 {
-                    _absoluteAngles.append(_absoluteAngles[cnt - 1] + _drawAngles[cnt])
+                    _absoluteAngles.append(_absoluteAngles[cnt - 1] + _absoluteAngle)
                 }
-                
                 cnt += 1
+            }
+            for value in yValues {
+                let maxValue = yValues.max()
+                let valuePercentage = (100 * value) / maxValue!
+                let radiusValue = (CGFloat(valuePercentage) * self.diameter/2)/CGFloat(100)
+                _drawRadius.append(radiusValue)
             }
         }
     }
@@ -240,37 +226,10 @@ open class PolarAreaChartView: PieRadarChartViewBase
         return false
     }
     
-    /// calculates the needed angle for a given value
-    fileprivate func calcAngle(_ value: Double) -> CGFloat
-    {
-        return calcAngle(value: value, yValueSum: (_data as! PieChartData).yValueSum)
-    }
-    
-    /// calculates the needed angle for a given value
-    fileprivate func calcAngle(value: Double, yValueSum: Double) -> CGFloat
-    {
-        return CGFloat(value) / CGFloat(yValueSum) * _maxAngle
-    }
-    
     /// This will throw an exception, polarChart has no XAxis object.
     open override var xAxis: XAxis
     {
         fatalError("polarChart has no XAxis")
-    }
-    
-    open override func indexForAngle(_ angle: CGFloat) -> Int
-    {
-        // take the current angle of the chart into consideration
-        let a = ChartUtils.normalizedAngleFromAngle(angle - self.rotationAngle)
-        for i in 0 ..< _absoluteAngles.count
-        {
-            if _absoluteAngles[i] > a
-            {
-                return i
-            }
-        }
-        
-        return -1 // return -1 if no index found
     }
     
     /// - returns: The index of the DataSet this x-index belongs to.
@@ -289,12 +248,12 @@ open class PolarAreaChartView: PieRadarChartViewBase
         return -1
     }
     
-    /// - returns: An integer array of all the different angles the chart slices
+    /// - returns: An integer array of all the different Radius the chart slices
     /// have the angles in the returned array determine how much space (of 360°)
     /// each slice takes
-    open var drawAngles: [CGFloat]
+    open var drawRadius: [CGFloat]
     {
-        return _drawAngles
+        return _drawRadius
     }
     
     /// - returns: The absolute angles of the different chart slices (where the
@@ -304,65 +263,9 @@ open class PolarAreaChartView: PieRadarChartViewBase
         return _absoluteAngles
     }
     
-    /// The color for the hole that is drawn in the center of the polarChart (if enabled).
-    ///
-    /// - note: Use holeTransparent with holeColor = nil to make the hole transparent.*
-    open var holeColor: NSUIColor?
-        {
-        get
-        {
-            return _holeColor
-        }
-        set
-        {
-            _holeColor = newValue
-            setNeedsDisplay()
-        }
-    }
-    
-    /// if true, the hole will see-through to the inner tips of the slices
-    ///
-    /// **default**: `false`
-    open var drawSlicesUnderHoleEnabled: Bool
-        {
-        get
-        {
-            return _drawSlicesUnderHoleEnabled
-        }
-        set
-        {
-            _drawSlicesUnderHoleEnabled = newValue
-            setNeedsDisplay()
-        }
-    }
-    
-    /// - returns: `true` if the inner tips of the slices are visible behind the hole, `false` if not.
-    open var isDrawSlicesUnderHoleEnabled: Bool
+    open var absoluteAngle:CGFloat
     {
-        return drawSlicesUnderHoleEnabled
-    }
-    
-    /// `true` if the hole in the center of the polar-chart is set to be visible, `false` ifnot
-    open var drawHoleEnabled: Bool
-        {
-        get
-        {
-            return _drawHoleEnabled
-        }
-        set
-        {
-            _drawHoleEnabled = newValue
-            setNeedsDisplay()
-        }
-    }
-    
-    /// - returns: `true` if the hole in the center of the polar-chart is set to be visible, `false` ifnot
-    open var isDrawHoleEnabled: Bool
-        {
-        get
-        {
-            return drawHoleEnabled
-        }
+        return _absoluteAngle
     }
     
     /// the text that is displayed in the center of the polar-chart
@@ -476,22 +379,6 @@ open class PolarAreaChartView: PieRadarChartViewBase
     open var centerCircleBox: CGPoint
     {
         return CGPoint(x: _circleBox.midX, y: _circleBox.midY)
-    }
-    
-    /// the radius of the hole in the center of the polarchart in percent of the maximum radius (max = the radius of the whole chart)
-    ///
-    /// **default**: 0.5 (50%) (half the polar)
-    open var holeRadiusPercent: CGFloat
-        {
-        get
-        {
-            return _holeRadiusPercent
-        }
-        set
-        {
-            _holeRadiusPercent = newValue
-            setNeedsDisplay()
-        }
     }
     
     /// The color that the transparent-circle should have.

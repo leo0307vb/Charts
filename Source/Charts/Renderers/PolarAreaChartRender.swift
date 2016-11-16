@@ -117,11 +117,10 @@ open class PolarAreaChartRenderer: DataRenderer
         let phaseY = animator.phaseY
         
         let entryCount = dataSet.entryCount
-        var drawAngles = chart.drawAngles
+        var drawAngle = chart.maxAngle / CGFloat(entryCount)
         let center = chart.centerCircleBox
-        var radius = chart.radius
-        let drawInnerArc = chart.drawHoleEnabled && !chart.drawSlicesUnderHoleEnabled
-        let userInnerRadius = drawInnerArc ? radius * chart.holeRadiusPercent : 0.0
+        var maxRadius = chart.radius
+        let userInnerRadius = 0.0
         
         var visibleAngleCount = 0
         for j in 0 ..< entryCount
@@ -139,8 +138,8 @@ open class PolarAreaChartRenderer: DataRenderer
         
         for j in 0 ..< entryCount
         {
-            radius = CGFloat(j + 1) * CGFloat(45)
-            let sliceAngle = drawAngles[j]
+            var radius = chart.drawRadius[j]
+            let sliceAngle = drawAngle
             var innerRadius = userInnerRadius
             
             guard let e = dataSet.entryForIndex(j) else { continue }
@@ -174,12 +173,12 @@ open class PolarAreaChartRenderer: DataRenderer
                     
                     path.addRelativeArc(center: center, radius: radius, startAngle: startAngleOuter * ChartUtils.Math.FDEG2RAD, delta: sweepAngleOuter * ChartUtils.Math.FDEG2RAD)
                     
-                    if drawInnerArc &&
-                        (innerRadius > 0.0 || accountForSliceSpacing)
+                    if accountForSliceSpacing
                     {
-                        if accountForSliceSpacing
-                        {
-                            var minSpacedRadius = calculateMinimumRadiusForSpacedSlice(
+                        let angleMiddle = startAngleOuter + sweepAngleOuter / 2.0
+                        
+                        let sliceSpaceOffset =
+                            calculateMinimumRadiusForSpacedSlice(
                                 center: center,
                                 radius: radius,
                                 angle: sliceAngle * CGFloat(phaseY),
@@ -187,60 +186,20 @@ open class PolarAreaChartRenderer: DataRenderer
                                 arcStartPointY: arcStartPointY,
                                 startAngle: startAngleOuter,
                                 sweepAngle: sweepAngleOuter)
-                            if minSpacedRadius < 0.0
-                            {
-                                minSpacedRadius = -minSpacedRadius
-                            }
-                            innerRadius = min(max(innerRadius, minSpacedRadius), radius)
-                        }
                         
-                        let sliceSpaceAngleInner = visibleAngleCount == 1 || innerRadius == 0.0 ?
-                            0.0 :
-                            sliceSpace / (ChartUtils.Math.FDEG2RAD * innerRadius)
-                        let startAngleInner = rotationAngle + (angle + sliceSpaceAngleInner / 2.0) * CGFloat(phaseY)
-                        var sweepAngleInner = (sliceAngle - sliceSpaceAngleInner) * CGFloat(phaseY)
-                        if sweepAngleInner < 0.0
-                        {
-                            sweepAngleInner = 0.0
-                        }
-                        let endAngleInner = startAngleInner + sweepAngleInner
+                        let arcEndPointX = center.x + sliceSpaceOffset * cos(angleMiddle * ChartUtils.Math.FDEG2RAD)
+                        let arcEndPointY = center.y + sliceSpaceOffset * sin(angleMiddle * ChartUtils.Math.FDEG2RAD)
                         
                         path.addLine(
                             to: CGPoint(
-                                x: center.x + innerRadius * cos(endAngleInner * ChartUtils.Math.FDEG2RAD),
-                                y: center.y + innerRadius * sin(endAngleInner * ChartUtils.Math.FDEG2RAD)))
-                        
-                        path.addRelativeArc(center: center, radius: innerRadius, startAngle: endAngleInner * ChartUtils.Math.FDEG2RAD, delta: -sweepAngleInner * ChartUtils.Math.FDEG2RAD)
+                                x: arcEndPointX,
+                                y: arcEndPointY))
                     }
                     else
                     {
-                        if accountForSliceSpacing
-                        {
-                            let angleMiddle = startAngleOuter + sweepAngleOuter / 2.0
-                            
-                            let sliceSpaceOffset =
-                                calculateMinimumRadiusForSpacedSlice(
-                                    center: center,
-                                    radius: radius,
-                                    angle: sliceAngle * CGFloat(phaseY),
-                                    arcStartPointX: arcStartPointX,
-                                    arcStartPointY: arcStartPointY,
-                                    startAngle: startAngleOuter,
-                                    sweepAngle: sweepAngleOuter)
-                            
-                            let arcEndPointX = center.x + sliceSpaceOffset * cos(angleMiddle * ChartUtils.Math.FDEG2RAD)
-                            let arcEndPointY = center.y + sliceSpaceOffset * sin(angleMiddle * ChartUtils.Math.FDEG2RAD)
-                            
-                            path.addLine(
-                                to: CGPoint(
-                                    x: arcEndPointX,
-                                    y: arcEndPointY))
-                        }
-                        else
-                        {
-                            path.addLine(to: center)
-                        }
+                        path.addLine(to: center)
                     }
+                    
                     
                     path.closeSubpath()
                     
@@ -266,23 +225,12 @@ open class PolarAreaChartRenderer: DataRenderer
         
         let center = chart.centerCircleBox
         
-        // get whole the radius
-        var radius = chart.radius
         let rotationAngle = chart.rotationAngle
-        var drawAngles = chart.drawAngles
+        var drawAngles = chart.absoluteAngle
         var absoluteAngles = chart.absoluteAngles
         
         let phaseX = animator.phaseX
         let phaseY = animator.phaseY
-        
-        var labelRadiusOffset = radius / 10.0 * 3.0
-        
-        if chart.drawHoleEnabled
-        {
-            labelRadiusOffset = (radius - (radius * chart.holeRadiusPercent)) / 2.0
-        }
-        
-        let labelRadius = radius - labelRadiusOffset
         
         var dataSets = data.dataSets
         
@@ -321,6 +269,11 @@ open class PolarAreaChartRenderer: DataRenderer
             
             for j in 0 ..< dataSet.entryCount
             {
+                // get whole the radius
+                var radius = chart.drawRadius[j]
+                var labelRadiusOffset = radius / 10.0 * 3.0
+                let labelRadius = radius - labelRadiusOffset
+                
                 guard let e = dataSet.entryForIndex(j) else { continue }
                 let pe = e as? PieChartDataEntry
                 
@@ -333,7 +286,7 @@ open class PolarAreaChartRenderer: DataRenderer
                     angle = absoluteAngles[xIndex - 1] * CGFloat(phaseX)
                 }
                 
-                let sliceAngle = drawAngles[xIndex]
+                let sliceAngle = drawAngles
                 let sliceSpace = getSliceSpace(dataSet: dataSet)
                 let sliceSpaceMiddleAngle = sliceSpace / (ChartUtils.Math.FDEG2RAD * labelRadius)
                 
@@ -374,14 +327,7 @@ open class PolarAreaChartRenderer: DataRenderer
                     
                     var line1Radius: CGFloat
                     
-                    if chart.drawHoleEnabled
-                    {
-                        line1Radius = (radius - (radius * chart.holeRadiusPercent)) * valueLinePart1OffsetPercentage + (radius * chart.holeRadiusPercent)
-                    }
-                    else
-                    {
-                        line1Radius = radius * valueLinePart1OffsetPercentage
-                    }
+                    line1Radius = radius * valueLinePart1OffsetPercentage
                     
                     let polyline2Length = dataSet.valueLineVariableLength
                         ? labelRadius * valueLineLength2 * abs(sin(transformedAngle * ChartUtils.Math.FDEG2RAD))
@@ -533,67 +479,7 @@ open class PolarAreaChartRenderer: DataRenderer
     
     open override func drawExtras(context: CGContext)
     {
-        drawHole(context: context)
         drawCenterText(context: context)
-    }
-    
-    /// draws the hole in the center of the chart and the transparent circle / hole
-    fileprivate func drawHole(context: CGContext)
-    {
-        guard
-            let chart = chart,
-            let animator = animator
-            else { return }
-        
-        if chart.drawHoleEnabled
-        {
-            context.saveGState()
-            
-            let radius = chart.radius
-            let holeRadius = radius * chart.holeRadiusPercent
-            let center = chart.centerCircleBox
-            
-            if let holeColor = chart.holeColor
-            {
-                if holeColor != NSUIColor.clear
-                {
-                    // draw the hole-circle
-                    context.setFillColor(chart.holeColor!.cgColor)
-                    context.fillEllipse(in: CGRect(x: center.x - holeRadius, y: center.y - holeRadius, width: holeRadius * 2.0, height: holeRadius * 2.0))
-                }
-            }
-            
-            // only draw the circle if it can be seen (not covered by the hole)
-            if let transparentCircleColor = chart.transparentCircleColor
-            {
-                if transparentCircleColor != NSUIColor.clear &&
-                    chart.transparentCircleRadiusPercent > chart.holeRadiusPercent
-                {
-                    let alpha = animator.phaseX * animator.phaseY
-                    let secondHoleRadius = radius * chart.transparentCircleRadiusPercent
-                    
-                    // make transparent
-                    context.setAlpha(CGFloat(alpha))
-                    context.setFillColor(transparentCircleColor.cgColor)
-                    
-                    // draw the transparent-circle
-                    context.beginPath()
-                    context.addEllipse(in: CGRect(
-                        x: center.x - secondHoleRadius,
-                        y: center.y - secondHoleRadius,
-                        width: secondHoleRadius * 2.0,
-                        height: secondHoleRadius * 2.0))
-                    context.addEllipse(in: CGRect(
-                        x: center.x - holeRadius,
-                        y: center.y - holeRadius,
-                        width: holeRadius * 2.0,
-                        height: holeRadius * 2.0))
-                    context.fillPath(using: .evenOdd)
-                }
-            }
-            
-            context.restoreGState()
-        }
     }
     
     /// draws the description text in the center of the pie chart makes most sense when center-hole is enabled
@@ -608,7 +494,7 @@ open class PolarAreaChartRenderer: DataRenderer
         {
             let center = chart.centerCircleBox
             let offset = chart.centerTextOffset
-            let innerRadius = chart.drawHoleEnabled && !chart.drawSlicesUnderHoleEnabled ? chart.radius * chart.holeRadiusPercent : chart.radius
+            let innerRadius = chart.radius
             
             let x = center.x + offset.x
             let y = center.y + offset.y
@@ -643,182 +529,5 @@ open class PolarAreaChartRenderer: DataRenderer
             
             context.restoreGState()
         }
-    }
-    
-    open override func drawHighlighted(context: CGContext, indices: [Highlight])
-    {
-        guard
-            let chart = chart,
-            let data = chart.data,
-            let animator = animator
-            else { return }
-        
-        context.saveGState()
-        
-        let phaseX = animator.phaseX
-        let phaseY = animator.phaseY
-        
-        var angle: CGFloat = 0.0
-        let rotationAngle = chart.rotationAngle
-        
-        var drawAngles = chart.drawAngles
-        var absoluteAngles = chart.absoluteAngles
-        let center = chart.centerCircleBox
-        let radius = chart.radius
-        let drawInnerArc = chart.drawHoleEnabled && !chart.drawSlicesUnderHoleEnabled
-        let userInnerRadius = drawInnerArc ? radius * chart.holeRadiusPercent : 0.0
-        
-        for i in 0 ..< indices.count
-        {
-            // get the index to highlight
-            let index = Int(indices[i].x)
-            if index >= drawAngles.count
-            {
-                continue
-            }
-            
-            guard let set = data.getDataSetByIndex(indices[i].dataSetIndex) as? IPieChartDataSet else { continue }
-            
-            if !set.isHighlightEnabled
-            {
-                continue
-            }
-            
-            let entryCount = set.entryCount
-            var visibleAngleCount = 0
-            for j in 0 ..< entryCount
-            {
-                guard let e = set.entryForIndex(j) else { continue }
-                if ((abs(e.y) > DBL_EPSILON))
-                {
-                    visibleAngleCount += 1
-                }
-            }
-            
-            if index == 0
-            {
-                angle = 0.0
-            }
-            else
-            {
-                angle = absoluteAngles[index - 1] * CGFloat(phaseX)
-            }
-            
-            let sliceSpace = visibleAngleCount <= 1 ? 0.0 : set.sliceSpace
-            
-            let sliceAngle = drawAngles[index]
-            var innerRadius = userInnerRadius
-            
-            let shift = set.selectionShift
-            let highlightedRadius = radius + shift
-            
-            let accountForSliceSpacing = sliceSpace > 0.0 && sliceAngle <= 180.0
-            
-            context.setFillColor(set.color(atIndex: index).cgColor)
-            
-            let sliceSpaceAngleOuter = visibleAngleCount == 1 ?
-                0.0 :
-                sliceSpace / (ChartUtils.Math.FDEG2RAD * radius)
-            
-            let sliceSpaceAngleShifted = visibleAngleCount == 1 ?
-                0.0 :
-                sliceSpace / (ChartUtils.Math.FDEG2RAD * highlightedRadius)
-            
-            let startAngleOuter = rotationAngle + (angle + sliceSpaceAngleOuter / 2.0) * CGFloat(phaseY)
-            var sweepAngleOuter = (sliceAngle - sliceSpaceAngleOuter) * CGFloat(phaseY)
-            if sweepAngleOuter < 0.0
-            {
-                sweepAngleOuter = 0.0
-            }
-            
-            let startAngleShifted = rotationAngle + (angle + sliceSpaceAngleShifted / 2.0) * CGFloat(phaseY)
-            var sweepAngleShifted = (sliceAngle - sliceSpaceAngleShifted) * CGFloat(phaseY)
-            if sweepAngleShifted < 0.0
-            {
-                sweepAngleShifted = 0.0
-            }
-            
-            let path = CGMutablePath()
-            
-            path.move(to: CGPoint(x: center.x + highlightedRadius * cos(startAngleShifted * ChartUtils.Math.FDEG2RAD),
-                                  y: center.y + highlightedRadius * sin(startAngleShifted * ChartUtils.Math.FDEG2RAD)))
-            
-            path.addRelativeArc(center: center, radius: highlightedRadius, startAngle: startAngleShifted * ChartUtils.Math.FDEG2RAD,
-                                delta: sweepAngleShifted * ChartUtils.Math.FDEG2RAD)
-            
-            var sliceSpaceRadius: CGFloat = 0.0
-            if accountForSliceSpacing
-            {
-                sliceSpaceRadius = calculateMinimumRadiusForSpacedSlice(
-                    center: center,
-                    radius: radius,
-                    angle: sliceAngle * CGFloat(phaseY),
-                    arcStartPointX: center.x + radius * cos(startAngleOuter * ChartUtils.Math.FDEG2RAD),
-                    arcStartPointY: center.y + radius * sin(startAngleOuter * ChartUtils.Math.FDEG2RAD),
-                    startAngle: startAngleOuter,
-                    sweepAngle: sweepAngleOuter)
-            }
-            
-            if drawInnerArc &&
-                (innerRadius > 0.0 || accountForSliceSpacing)
-            {
-                if accountForSliceSpacing
-                {
-                    var minSpacedRadius = sliceSpaceRadius
-                    if minSpacedRadius < 0.0
-                    {
-                        minSpacedRadius = -minSpacedRadius
-                    }
-                    innerRadius = min(max(innerRadius, minSpacedRadius), radius)
-                }
-                
-                let sliceSpaceAngleInner = visibleAngleCount == 1 || innerRadius == 0.0 ?
-                    0.0 :
-                    sliceSpace / (ChartUtils.Math.FDEG2RAD * innerRadius)
-                let startAngleInner = rotationAngle + (angle + sliceSpaceAngleInner / 2.0) * CGFloat(phaseY)
-                var sweepAngleInner = (sliceAngle - sliceSpaceAngleInner) * CGFloat(phaseY)
-                if sweepAngleInner < 0.0
-                {
-                    sweepAngleInner = 0.0
-                }
-                let endAngleInner = startAngleInner + sweepAngleInner
-                
-                path.addLine(
-                    to: CGPoint(
-                        x: center.x + innerRadius * cos(endAngleInner * ChartUtils.Math.FDEG2RAD),
-                        y: center.y + innerRadius * sin(endAngleInner * ChartUtils.Math.FDEG2RAD)))
-                
-                path.addRelativeArc(center: center, radius: innerRadius,
-                                    startAngle: endAngleInner * ChartUtils.Math.FDEG2RAD,
-                                    delta: -sweepAngleInner * ChartUtils.Math.FDEG2RAD)
-            }
-            else
-            {
-                if accountForSliceSpacing
-                {
-                    let angleMiddle = startAngleOuter + sweepAngleOuter / 2.0
-                    
-                    let arcEndPointX = center.x + sliceSpaceRadius * cos(angleMiddle * ChartUtils.Math.FDEG2RAD)
-                    let arcEndPointY = center.y + sliceSpaceRadius * sin(angleMiddle * ChartUtils.Math.FDEG2RAD)
-                    
-                    path.addLine(
-                        to: CGPoint(
-                            x: arcEndPointX,
-                            y: arcEndPointY))
-                }
-                else
-                {
-                    path.addLine(to: center)
-                }
-            }
-            
-            path.closeSubpath()
-            
-            context.beginPath()
-            context.addPath(path)
-            context.fillPath(using: .evenOdd)
-        }
-        
-        context.restoreGState()
     }
 }
