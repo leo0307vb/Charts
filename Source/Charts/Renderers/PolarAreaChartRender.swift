@@ -117,16 +117,15 @@ open class PolarAreaChartRenderer: DataRenderer
         let phaseY = animator.phaseY
         
         let entryCount = dataSet.entryCount
-        var drawAngle = chart.maxAngle / CGFloat(entryCount)
+        let drawAngle = chart.maxAngle / CGFloat(entryCount)
         let center = chart.centerCircleBox
-        var maxRadius = chart.radius
         let userInnerRadius = 0.0
         
         var visibleAngleCount = 0
         for j in 0 ..< entryCount
         {
             guard let e = dataSet.entryForIndex(j) else { continue }
-            if ((abs(e.y) > DBL_EPSILON))
+            if ((abs(e.y) > Double.ulpOfOne))
             {
                 visibleAngleCount += 1
             }
@@ -138,14 +137,14 @@ open class PolarAreaChartRenderer: DataRenderer
         
         for j in 0 ..< entryCount
         {
-            var radius = chart.drawRadius[j]
+            let radius = chart.drawRadius[j]
             let sliceAngle = drawAngle
-            var innerRadius = userInnerRadius
+            _ = userInnerRadius
             
             guard let e = dataSet.entryForIndex(j) else { continue }
             
             // draw only if the value is greater than zero
-            if (abs(e.y) > DBL_EPSILON)
+            if (abs(e.y) > Double.ulpOfOne)
             {
                 if !chart.needsHighlight(index: j)
                 {
@@ -270,8 +269,8 @@ open class PolarAreaChartRenderer: DataRenderer
             for j in 0 ..< dataSet.entryCount
             {
                 // get whole the radius
-                var radius = chart.drawRadius[j]
-                var labelRadiusOffset = radius / 10.0 * 3.0
+                let radius = chart.drawRadius[j]
+                let labelRadiusOffset = radius / 10.0 * 3.0
                 let labelRadius = radius - labelRadiusOffset
                 
                 guard let e = dataSet.entryForIndex(j) else { continue }

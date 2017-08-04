@@ -139,14 +139,12 @@ open class PolarAreaChartView: PieRadarChartViewBase
         let center = self.centerCircleBox
         var r = self.radius
         
-        var off = r / 10.0 * 3.6
+        let off = r / 10.0 * 3.6
         
         r -= off // offset to keep things inside the chart
         
         let rotationAngle = self.rotationAngle
-        
-        let entryIndex = Int(highlight.x)
-        
+
         // offset needed to center the drawn text in the slice
         let offset = absoluteAngle / 2.0
         
@@ -170,9 +168,7 @@ open class PolarAreaChartView: PieRadarChartViewBase
         _absoluteAngles.reserveCapacity(entryCount)
         
         _absoluteAngle = maxAngle / CGFloat(entryCount)
-        
-        let yValueSum = (_data as! PieChartData).yValueSum
-        
+
         var dataSets = data.dataSets
         
         var cnt = 0
